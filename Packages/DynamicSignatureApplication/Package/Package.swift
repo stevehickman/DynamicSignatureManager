@@ -4,6 +4,7 @@
 import PackageDescription
 
 let package = Package(
+
     name: "DynamicSignatureApplication",
 
     platforms: [
@@ -13,27 +14,44 @@ let package = Package(
     products: [
         .library(
             name: "DynamicSignatureApplication",
-            targets: ["DynamicSignatureApplication"]
+            targets:
+                ["DynamicSignatureApplication"]
         )
     ],
 
     dependencies: [
+
         .package(
-            path: "../DynamicSignatureDomain"
+            path:
+            "../DynamicSignatureDomain"
+        ),
+
+        .package(
+            path:
+            "../DynamicSignatureInfrastructure"
         )
     ],
 
     targets: [
+
         .target(
-            name: "DynamicSignatureApplication",
+            name:
+            "DynamicSignatureApplication",
+
             dependencies: [
-                "DynamicSignatureDomain"
+
+                "DynamicSignatureDomain",
+
+                "DynamicSignatureInfrastructure"
             ]
         ),
 
         .testTarget(
-            name: "DynamicSignatureApplicationTests",
-            dependencies: [
+            name:
+            "DynamicSignatureApplicationTests",
+
+            dependencies:
+            [
                 "DynamicSignatureApplication"
             ]
         )
