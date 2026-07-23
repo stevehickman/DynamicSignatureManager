@@ -12,6 +12,10 @@ struct MenuBarView:
     View {
 
 
+    @StateObject
+    private var controller =
+        MenuBarController()
+
     var body:
         some View {
 
@@ -20,10 +24,17 @@ struct MenuBarView:
 
 
             Button(
-                "Generate Signature"
+                "Generate New Signature"
             ) {
 
+                controller.generate()
+            }
 
+            Button(
+                "Copy Signature"
+            ) {
+
+                controller.copy()
             }
 
 
@@ -31,18 +42,14 @@ struct MenuBarView:
 
 
             Button(
-                "Preferences..."
+                "Open Preferences"
             ) {
-
 
                 NSApp.sendAction(
                     Selector(
                         "showSettingsWindow:"
                     ),
-                    to:
-                        nil,
-                    from:
-                        nil
+                    to:nil
                 )
             }
 
@@ -54,10 +61,8 @@ struct MenuBarView:
                 "Quit"
             ) {
 
-                NSApplication.shared
-                    .terminate(nil)
+                NSApp.terminate(nil)
             }
         }
-        .padding()
     }
 }
