@@ -12,29 +12,38 @@ struct ContentView:
     View {
 
 
+    @StateObject
+    private var model =
+        SignatureViewModel()
+
+
+
     var body:
         some View {
 
 
-        NavigationStack {
+        VStack(
+            spacing:
+                20
+        ) {
 
 
-            VStack(spacing: 20) {
+            SignaturePreviewView(
+                text:
+                    model.signatureText
+            )
 
 
-                Text(
-                    "Dynamic Signature Manager"
-                )
-                .font(
-                    .largeTitle
-                )
+            Button(
+                "Copy Signature"
+            ) {
 
-
-                Text(
-                    "Ready"
-                )
+                ClipboardService()
+                    .copy(
+                        model.signatureText
+                    )
             }
-            .padding()
         }
+        .padding()
     }
 }
