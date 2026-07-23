@@ -23,14 +23,22 @@ public struct Quote: IdentifiableEntity {
 
     public var createdAt: Date
 
+    public var tags: Set<String>
 
+    public var usageCount: Int
+
+    public var lastUsed: Date?
+    
     public init(
         id: UUID = UUID(),
         text: String,
         author: String? = nil,
         categoryIDs: Set<UUID> = [],
+        tags: Set<String> = [],
         isEnabled: Bool = true,
         weight: Double = 1.0,
+        usageCount: Int = 0,
+        lastUsed: Date? = nil,
         createdAt: Date = .now
     ) {
 
@@ -38,8 +46,11 @@ public struct Quote: IdentifiableEntity {
         self.text = text
         self.author = author
         self.categoryIDs = categoryIDs
+        self.tags = tags
         self.isEnabled = isEnabled
         self.weight = weight
+        self.usageCount = usageCount
+        self.lastUsed = lastUsed
         self.createdAt = createdAt
     }
 }
