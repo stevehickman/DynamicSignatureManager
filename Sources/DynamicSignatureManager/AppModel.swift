@@ -16,6 +16,8 @@ final class AppModel: ObservableObject {
         static let rotationEnabled = "rotationEnabled"
         static let rotationInterval = "rotationInterval"
         static let recentQuoteLimit = "recentQuoteLimit"
+        static let preferSeasonalQuotes = "preferSeasonalQuotes"
+        static let hemisphere = "hemisphere"
         // Legacy keys from the single-identity era; read once to migrate
         // their values into the default profile.
         static let signatureName = "signatureName"
@@ -50,6 +52,8 @@ final class AppModel: ObservableObject {
             DefaultsKey.rotationInterval: RotationInterval.daily.rawValue,
             DefaultsKey.signatureName: "Dynamic Quote",
             DefaultsKey.recentQuoteLimit: 10,
+            DefaultsKey.preferSeasonalQuotes: true,
+            DefaultsKey.hemisphere: Hemisphere.northern.rawValue,
             DefaultsKey.includeQuote: true,
             DefaultsKey.includeContactDetails: true
         ])
@@ -96,7 +100,11 @@ final class AppModel: ObservableObject {
         return RotationConfiguration(
             isEnabled: defaults.bool(forKey: DefaultsKey.rotationEnabled),
             interval: interval,
-            recentQuoteLimit: defaults.integer(forKey: DefaultsKey.recentQuoteLimit)
+            recentQuoteLimit: defaults.integer(forKey: DefaultsKey.recentQuoteLimit),
+            preferSeasonalQuotes: defaults.bool(forKey: DefaultsKey.preferSeasonalQuotes),
+            hemisphere: Hemisphere(
+                rawValue: defaults.string(forKey: DefaultsKey.hemisphere) ?? ""
+            ) ?? .northern
         )
     }
 

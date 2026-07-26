@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.2.0 — 2026-07-26
+
+Seasonal quote selection via tags.
+
+### Added
+- Seasonal tags: quotes tagged with a season (`winter`, `spring`, `summer`,
+  `autumn`/`fall`), a month (`january`…`december`), or a holiday span
+  (`new-year`, `valentines`, `halloween`, `thanksgiving`, `christmas`) are
+  only selected while that tag is active, and are preferred over untagged
+  quotes during their period. Matching is case-insensitive; unrecognized
+  tags remain purely organizational. Seasons use meteorological
+  boundaries.
+- Tags editing in the quote editor (comma-separated field with a live
+  seasonal indicator), tag display in the quote list (calendar icon for
+  seasonal, tag icon for organizational), and tag-aware search.
+- "Match quotes to the time of year" toggle in Settings → Rotation
+  (on by default), plus a Hemisphere picker (Northern/Southern, defaulting
+  to Northern): season tags flip in the southern hemisphere while month and
+  holiday tags stay calendar-based.
+- Simple JSON import format now accepts an optional `"tags"` array.
+- Four seasonal starter quotes in the default library.
+
+### Changed
+- `QuoteSelectionEngine.select` accepts optional `activeSeasonalTags`;
+  `SignatureService.generate` takes `now`/`preferSeasonalQuotes`;
+  `RotationConfiguration` gains `preferSeasonalQuotes`. When every enabled
+  quote is out of season, seasonality is ignored rather than failing
+  rotation.
+
 ## 1.1.0 — 2026-07-26
 
 Multiple signature profiles, one per mail account.

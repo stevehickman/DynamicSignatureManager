@@ -20,6 +20,12 @@ from then on.
 - **Rotation**: hourly, daily, or weekly, plus a "New Quote Now" menu item.
 - **No repeats**: recently used quotes are avoided (configurable window).
 - **Weighted selection**: give favorite quotes a higher weight.
+- **Seasonal tags**: tag a quote with a season, month, or holiday
+  (`winter`, `december`, `christmas`, `halloween`, `new-year`, …) and it
+  only appears — and is preferred — at that time of year. Untagged quotes
+  rotate year-round; other tags are purely organizational. Settings →
+  Rotation has an on/off toggle and a hemisphere picker (southern
+  hemisphere flips the seasons; months and holidays are unaffected).
 - **Editable database**: add, edit, disable, delete, search; import/export
   the library as JSON. Data lives in plain JSON files you can edit directly.
 - **Mail can be closed**: if Mail isn't running when rotation is due, the
@@ -65,7 +71,8 @@ Import accepts either the app's own export format or a minimal JSON array:
 ```json
 [
   { "text": "Well begun is half done.", "author": "Aristotle" },
-  { "text": "An unattributed quote" }
+  { "text": "An unattributed quote" },
+  { "text": "A seasonal quote", "author": "Someone", "tags": ["winter", "christmas"] }
 ]
 ```
 

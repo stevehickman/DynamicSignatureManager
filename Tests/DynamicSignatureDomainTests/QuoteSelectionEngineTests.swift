@@ -58,6 +58,97 @@ struct SeededGenerator: RandomNumberGenerator {
         #expect(selected?.id == only.id)
     }
 
+    @Test func excludesOutOfSeasonQuotes() {
+        let christmas = Quote(text: "Christmas", tags: ["christmas"])
+        let evergreen = Quote(text: "Evergreen")
+
+        var generator = SeededGenerator(state: 3)
+        for _ in 0..<20 {
+            let selected = engine.select(
+                from: [christmas, evergreen],
+                avoiding: [],
+                activeSeasonalTags: ["summer", "july"],
+                using: &generator
+            )
+            #expect(selected?.id == evergreen.id)
+        }
+    }
+
+    @Test func prefersInSeasonQuotesOverUntaggedOnes() {
+        let winter = Quote(text: "Winter", tags: ["winter"])
+        let evergreen = Quote(text: "Evergreen")
+
+        var generator = SeededGenerator(state: 11)
+        for _ in 0..<20 {
+            let selected = engine.select(
+                from: [winter, evergreen],
+                avoiding: [],
+                activeSeasonalTags: ["winter", "december", "christmas"],
+                using: &generator
+            )
+            #expect(selected?.id == winter.id)
+        }
+    }
+
+    @Test func fallsBackToUntaggedWhenInSeasonQuotesAreRecent() {
+        let winter = Quote(text: "Winter", tags: ["winter"])
+        let evergreen = Quote(text: "Evergreen")
+
+        var generator = SeededGenerator(state: 5)
+        for _ in 0..<20 {
+            let selected = engine.select(
+                from: [winter, evergreen],
+                avoiding: [winter.id],
+                activeSeasonalTags: ["winter"],
+                using: &generator
+            )
+            #expect(selected?.id == evergreen.id)
+        }
+    }
+
+    @Test func ignoresSeasonalityWhenEveryQuoteIsOutOfSeason() {
+        let christmas = Quote(text: "Christmas", tags: ["christmas"])
+        let halloween = Quote(text: "Halloween", tags: ["halloween"])
+
+        var generator = SeededGenerator(state: 13)
+        let selected = engine.select(
+            from: [christmas, halloween],
+            avoiding: [],
+            activeSeasonalTags: ["summer"],
+            using: &generator
+        )
+        #expect(selected != nil)
+    }
+
+    @Test func organizationalTagsDoNotRestrictSelection() {
+        let tagged = Quote(text: "Tagged", tags: ["stoicism", "work"])
+
+        var generator = SeededGenerator(state: 17)
+        let selected = engine.select(
+            from: [tagged],
+            avoiding: [],
+            activeSeasonalTags: ["summer"],
+            using: &generator
+        )
+        #expect(selected?.id == tagged.id)
+    }
+
+    @Test func seasonalTagMatchingIsCaseInsensitive() {
+        let christmas = Quote(text: "Christmas", tags: ["Christmas"])
+        let evergreen = Quote(text: "Evergreen")
+
+        var generator = SeededGenerator(state: 23)
+        for _ in 0..<20 {
+            let selected = engine.select(
+                from: [christmas, evergreen],
+                avoiding: [],
+                activeSeasonalTags: ["christmas", "winter", "december"],
+                using: &generator
+            )
+            #expect(selected?.id == christmas.id)
+        }
+    }
+
     @Test func selectsEveryEnabledQuoteEventually() {
         let quotes = (0..<5).map { Quote(text: "Quote \($0)") }
         var generator = SeededGenerator(state: 99)

@@ -55,14 +55,24 @@ public final class SignatureService {
 
     /// Generates signatures for all active profiles with a freshly selected
     /// quote (shared across the profiles that include one).
-    public func generate() throws -> GeneratedSignatureBatch {
+    public func generate(
+        now: Date = .now,
+        preferSeasonalQuotes: Bool = true,
+        hemisphere: Hemisphere = .northern
+    ) throws -> GeneratedSignatureBatch {
         let profiles = try activeProfiles()
 
         var quote: Quote?
         if profiles.contains(where: { $0.template.includeQuote }) {
             let quotes = try quoteRepository.loadAll()
             let state = try stateRepository.load()
-            quote = engine.select(from: quotes, avoiding: state.recentQuoteIDs)
+            quote = engine.select(
+                from: quotes,
+                avoiding: state.recentQuoteIDs,
+                activeSeasonalTags: preferSeasonalQuotes
+                    ? SeasonalTags.activeTags(on: now, hemisphere: hemisphere)
+                    : nil
+            )
             guard quote != nil else {
                 throw ApplicationError.noQuotesAvailable
             }
