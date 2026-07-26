@@ -25,6 +25,24 @@ public final class FileQuoteRepository: QuoteRepository {
     }
 }
 
+public final class FileProfileRepository: ProfileRepository {
+
+    private let store: JSONFileStore
+
+    public init(fileURL: URL) {
+        self.store = JSONFileStore(fileURL: fileURL)
+    }
+
+    public func loadAll() throws -> [SignatureProfile] {
+        try store.load([SignatureProfile].self) ?? []
+    }
+
+    public func saveAll(_ profiles: [SignatureProfile]) throws {
+        try store.save(profiles)
+    }
+}
+
+/// Legacy single-identity file (identity.json); read once during migration.
 public final class FileIdentityRepository: IdentityRepository {
 
     private let store: JSONFileStore

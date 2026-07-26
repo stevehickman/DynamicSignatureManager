@@ -6,6 +6,13 @@ public protocol QuoteRepository: AnyObject {
     func saveAll(_ quotes: [Quote]) throws
 }
 
+public protocol ProfileRepository: AnyObject {
+    func loadAll() throws -> [SignatureProfile]
+    func saveAll(_ profiles: [SignatureProfile]) throws
+}
+
+/// Legacy single-identity storage (pre-profiles). Kept only so existing
+/// installs can be migrated into a default profile; see ProfileMigration.
 public protocol IdentityRepository: AnyObject {
     func load() throws -> Identity?
     func save(_ identity: Identity) throws

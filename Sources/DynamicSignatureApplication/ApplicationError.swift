@@ -1,15 +1,15 @@
 import Foundation
 
 public enum ApplicationError: LocalizedError, Equatable {
-    case identityNotConfigured
+    case noProfilesConfigured
     case noQuotesAvailable
     case mailNotRunning
     case mailSyncFailed(String)
 
     public var errorDescription: String? {
         switch self {
-        case .identityNotConfigured:
-            "Set your name in Settings before generating a signature."
+        case .noProfilesConfigured:
+            "No usable signature profile. In Settings → Profiles, enable a profile and set its name."
         case .noQuotesAvailable:
             "No enabled quotes are available. Add or enable quotes in the Quote Library."
         case .mailNotRunning:
