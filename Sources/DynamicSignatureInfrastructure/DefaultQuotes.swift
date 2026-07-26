@@ -20,6 +20,27 @@ public enum DefaultQuotes {
         Quote(text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Will Durant"),
         Quote(text: "A journey of a thousand miles begins with a single step.", author: "Laozi"),
         Quote(text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle"),
-        Quote(text: "The unexamined life is not worth living.", author: "Socrates")
+        Quote(text: "The unexamined life is not worth living.", author: "Socrates"),
+        // Seasonal examples — these only rotate during their tagged period.
+        Quote(
+            text: "In the depth of winter, I finally learned that within me there lay an invincible summer.",
+            author: "Albert Camus",
+            tags: ["winter"]
+        ),
+        Quote(
+            text: "No matter how long the winter, spring is sure to follow.",
+            author: "Proverb",
+            tags: ["spring"]
+        ),
+        Quote(
+            text: "Autumn is a second spring when every leaf is a flower.",
+            author: "Albert Camus",
+            tags: ["autumn"]
+        ),
+        Quote(
+            text: "Write it on your heart that every day is the best day in the year.",
+            author: "Ralph Waldo Emerson",
+            tags: ["new-year"]
+        )
     ]
 }

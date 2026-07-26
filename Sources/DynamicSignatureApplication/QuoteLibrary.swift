@@ -6,10 +6,11 @@ import DynamicSignatureDomain
 public final class QuoteLibrary {
 
     /// Minimal import format so hand-written JSON files work:
-    /// `[{"text": "...", "author": "..."}]`
+    /// `[{"text": "...", "author": "...", "tags": ["..."]}]`
     private struct SimpleQuote: Decodable {
         let text: String
         let author: String?
+        let tags: Set<String>?
     }
 
     private let repository: QuoteRepository
@@ -64,7 +65,7 @@ public final class QuoteLibrary {
             imported = full
         } else {
             let simple = try decoder.decode([SimpleQuote].self, from: data)
-            imported = simple.map { Quote(text: $0.text, author: $0.author) }
+            imported = simple.map { Quote(text: $0.text, author: $0.author, tags: $0.tags ?? []) }
         }
 
         var quotes = try repository.loadAll()

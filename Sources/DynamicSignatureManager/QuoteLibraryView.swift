@@ -13,12 +13,13 @@ struct QuoteLibraryView: View {
         return model.quotes.filter {
             $0.text.localizedCaseInsensitiveContains(trimmed)
                 || ($0.author?.localizedCaseInsensitiveContains(trimmed) ?? false)
+                || $0.tags.contains { $0.localizedCaseInsensitiveContains(trimmed) }
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            TextField("Search quotes or authors", text: $searchText)
+            TextField("Search quotes, authors, or tags", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .padding([.horizontal, .top])
 
@@ -118,6 +119,17 @@ private struct QuoteRow: View {
                     if quote.weight != 1.0 {
                         Text("Weight \(quote.weight.formatted(.number.precision(.fractionLength(0...1))))")
                     }
+                    if !quote.tags.isEmpty {
+                        Label(
+                            quote.tags.sorted().joined(separator: ", "),
+                            systemImage: SeasonalTags.seasonalTags(of: quote).isEmpty ? "tag" : "calendar"
+                        )
+                        .help(
+                            SeasonalTags.seasonalTags(of: quote).isEmpty
+                                ? "Tags"
+                                : "Seasonal — only appears at the matching time of year"
+                        )
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -143,6 +155,7 @@ struct QuoteEditorView: View {
 
     @State private var text: String
     @State private var author: String
+    @State private var tagsText: String
     @State private var weight: Double
     @State private var isEnabled: Bool
 
@@ -154,8 +167,21 @@ struct QuoteEditorView: View {
         self.onSave = onSave
         _text = State(initialValue: quote.text)
         _author = State(initialValue: quote.author ?? "")
+        _tagsText = State(initialValue: quote.tags.sorted().joined(separator: ", "))
         _weight = State(initialValue: quote.weight)
         _isEnabled = State(initialValue: quote.isEnabled)
+    }
+
+    private var editedTags: Set<String> {
+        Set(
+            tagsText.split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+                .filter { !$0.isEmpty }
+        )
+    }
+
+    private var seasonalTagsEntered: [String] {
+        editedTags.intersection(SeasonalTags.recognized).sorted()
     }
 
     private var canSave: Bool {
@@ -177,6 +203,17 @@ struct QuoteEditorView: View {
 
             TextField("Author (optional)", text: $author)
 
+            TextField("Tags, comma-separated (optional)", text: $tagsText)
+            if seasonalTagsEntered.isEmpty {
+                Text("Seasonal tags like \u{201C}winter\u{201D}, \u{201C}december\u{201D}, or \u{201C}christmas\u{201D} limit the quote to that time of year. Other tags are just for organizing.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Seasonal: \(seasonalTagsEntered.joined(separator: ", ")) — this quote only appears at the matching time of year.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             HStack {
                 Text("Weight")
                 Slider(value: $weight, in: 0.1...5.0)
@@ -197,6 +234,7 @@ struct QuoteEditorView: View {
                     quote.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
                     let trimmedAuthor = author.trimmingCharacters(in: .whitespaces)
                     quote.author = trimmedAuthor.isEmpty ? nil : trimmedAuthor
+                    quote.tags = editedTags
                     quote.weight = weight
                     quote.isEnabled = isEnabled
                     onSave(quote)

@@ -40,7 +40,11 @@ public final class RotationService {
     /// (re-applying an already-updated signature is harmless).
     @discardableResult
     public func rotate(configuration: RotationConfiguration, now: Date = .now) throws -> GeneratedSignatureBatch {
-        let batch = try signatureService.generate()
+        let batch = try signatureService.generate(
+            now: now,
+            preferSeasonalQuotes: configuration.preferSeasonalQuotes,
+            hemisphere: configuration.hemisphere
+        )
         try apply(batch)
 
         var state = try stateRepository.load()

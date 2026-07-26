@@ -269,6 +269,8 @@ private struct RotationSettingsView: View {
     @AppStorage(AppModel.DefaultsKey.rotationEnabled) private var rotationEnabled = true
     @AppStorage(AppModel.DefaultsKey.rotationInterval) private var rotationInterval = RotationInterval.daily.rawValue
     @AppStorage(AppModel.DefaultsKey.recentQuoteLimit) private var recentQuoteLimit = 10
+    @AppStorage(AppModel.DefaultsKey.preferSeasonalQuotes) private var preferSeasonalQuotes = true
+    @AppStorage(AppModel.DefaultsKey.hemisphere) private var hemisphere = Hemisphere.northern.rawValue
 
     var body: some View {
         Form {
@@ -286,6 +288,18 @@ private struct RotationSettingsView: View {
                 value: $recentQuoteLimit,
                 in: 0...50
             )
+
+            Toggle("Match quotes to the time of year", isOn: $preferSeasonalQuotes)
+            Picker("Hemisphere", selection: $hemisphere) {
+                ForEach(Hemisphere.allCases, id: \.rawValue) { hemisphere in
+                    Text(hemisphere.displayName).tag(hemisphere.rawValue)
+                }
+            }
+            .disabled(!preferSeasonalQuotes)
+            .help("Season tags flip in the southern hemisphere; month and holiday tags don't change")
+            Text("Quotes tagged with a season, month, or holiday (e.g. \u{201C}winter\u{201D}, \u{201C}december\u{201D}, \u{201C}christmas\u{201D}) only appear at that time of year and are preferred while it lasts. Untagged quotes rotate year-round.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             Divider()
 
