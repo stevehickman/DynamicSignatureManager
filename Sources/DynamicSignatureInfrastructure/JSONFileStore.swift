@@ -26,7 +26,9 @@ public struct JSONFileStore: Sendable {
     }
 
     public var fileExists: Bool {
-        FileManager.default.fileExists(atPath: fileURL.path())
+        // percentEncoded: false matters — the default path() encoding breaks
+        // paths containing spaces ("Application Support").
+        FileManager.default.fileExists(atPath: fileURL.path(percentEncoded: false))
     }
 
     /// Returns nil when the file doesn't exist yet.

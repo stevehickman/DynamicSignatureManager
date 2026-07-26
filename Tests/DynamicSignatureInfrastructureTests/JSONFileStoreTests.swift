@@ -59,6 +59,21 @@ import DynamicSignatureDomain
         #expect(loaded?.email == "s@example.com")
     }
 
+    @Test func worksInDirectoryContainingSpaces() throws {
+        // Regression test: real data lives in "~/Library/Application Support",
+        // and percent-encoded path handling once made every load return nil.
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "dsm space test \(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let repository = FileQuoteRepository(fileURL: directory.appending(path: "quotes.json"))
+        try repository.saveAll([Quote(text: "Spaced out")])
+
+        #expect(repository.hasStoredData)
+        #expect(try repository.loadAll().first?.text == "Spaced out")
+    }
+
     @Test func defaultQuotesAreValid() {
         #expect(!DefaultQuotes.all.isEmpty)
         for quote in DefaultQuotes.all {

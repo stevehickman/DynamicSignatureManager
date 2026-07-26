@@ -219,8 +219,14 @@ final class AppModel: ObservableObject {
         do {
             try identityRepository.save(newIdentity)
             identity = newIdentity
-            if newIdentity.isConfigured, currentQuote != nil {
+            statusMessage = nil
+            guard newIdentity.isConfigured else { return }
+            if currentQuote != nil {
                 resyncToMail()
+            } else {
+                // First-run flow: identity was the missing piece, so kick off
+                // the initial rotation instead of waiting for the next tick.
+                rotateIfDue()
             }
         } catch {
             statusMessage = "Couldn't save identity: \(error.localizedDescription)"
