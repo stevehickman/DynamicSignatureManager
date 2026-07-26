@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR 0002 (single package with layered targets)
 
 ## Decision
 

@@ -2,17 +2,33 @@ name: Build
 
 on:
   push:
+    branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-
-  build:
-
-    runs-on: macos-latest
+  build-and-test:
+    runs-on: macos-15
 
     steps:
-
       - uses: actions/checkout@v4
 
-      - name: Swift Build
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Build
         run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Package app
+        run: Scripts/package-app.sh
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DynamicSignatureManager
+          path: build/DynamicSignatureManager.app
