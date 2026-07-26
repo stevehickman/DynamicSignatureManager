@@ -15,14 +15,16 @@ final class AppModel: ObservableObject {
     enum DefaultsKey {
         static let rotationEnabled = "rotationEnabled"
         static let rotationInterval = "rotationInterval"
-        static let signatureName = "signatureName"
         static let recentQuoteLimit = "recentQuoteLimit"
+        // Legacy keys from the single-identity era; read once to migrate
+        // their values into the default profile.
+        static let signatureName = "signatureName"
         static let includeQuote = "includeQuote"
         static let includeContactDetails = "includeContactDetails"
     }
 
     @Published private(set) var quotes: [Quote] = []
-    @Published private(set) var identity = Identity()
+    @Published private(set) var profiles: [SignatureProfile] = []
     @Published private(set) var currentQuote: Quote?
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var statusMessage: String?
@@ -31,7 +33,7 @@ final class AppModel: ObservableObject {
     let storageDirectory: StorageDirectory
 
     private let quoteRepository: FileQuoteRepository
-    private let identityRepository: FileIdentityRepository
+    private let profileRepository: FileProfileRepository
     private let stateRepository: FileRotationStateRepository
     private let library: QuoteLibrary
     private let signatureService: SignatureService
@@ -60,12 +62,12 @@ final class AppModel: ObservableObject {
         }
 
         quoteRepository = FileQuoteRepository(fileURL: storageDirectory.file("quotes.json"))
-        identityRepository = FileIdentityRepository(fileURL: storageDirectory.file("identity.json"))
+        profileRepository = FileProfileRepository(fileURL: storageDirectory.file("profiles.json"))
         stateRepository = FileRotationStateRepository(fileURL: storageDirectory.file("rotation-state.json"))
 
         library = QuoteLibrary(repository: quoteRepository)
         signatureService = SignatureService(
-            identityRepository: identityRepository,
+            profileRepository: profileRepository,
             quoteRepository: quoteRepository,
             stateRepository: stateRepository
         )
@@ -78,6 +80,7 @@ final class AppModel: ObservableObject {
         )
 
         seedDefaultQuotesIfFirstRun()
+        migrateLegacyIdentityIfNeeded()
         reloadFromDisk()
         startRotationTimer()
         observeMailLaunches()
@@ -89,18 +92,11 @@ final class AppModel: ObservableObject {
         let interval = RotationInterval(
             rawValue: defaults.string(forKey: DefaultsKey.rotationInterval) ?? ""
         ) ?? .daily
-        let name = defaults.string(forKey: DefaultsKey.signatureName) ?? "Dynamic Quote"
 
         return RotationConfiguration(
             isEnabled: defaults.bool(forKey: DefaultsKey.rotationEnabled),
             interval: interval,
-            signatureName: name.isEmpty ? "Dynamic Quote" : name,
-            recentQuoteLimit: defaults.integer(forKey: DefaultsKey.recentQuoteLimit),
-            template: SignatureTemplate(
-                includeIdentity: true,
-                includeContactDetails: defaults.bool(forKey: DefaultsKey.includeContactDetails),
-                includeQuote: defaults.bool(forKey: DefaultsKey.includeQuote)
-            )
+            recentQuoteLimit: defaults.integer(forKey: DefaultsKey.recentQuoteLimit)
         )
     }
 
@@ -108,8 +104,9 @@ final class AppModel: ObservableObject {
         mailUpdater.isMailRunning
     }
 
-    var currentSignatureText: String? {
-        try? signatureService.current(configuration: configuration)?.text
+    /// Profiles rotation currently syncs (enabled and configured).
+    var activeProfiles: [SignatureProfile] {
+        profiles.filter { $0.isEnabled && $0.isConfigured }
     }
 
     // MARK: - Rotation
@@ -118,7 +115,7 @@ final class AppModel: ObservableObject {
         attemptRotation(manual: true)
     }
 
-    /// Pushes the current signature (or a first one) to Mail after identity
+    /// Pushes the current signatures (or first ones) to Mail after profile
     /// or template edits, without burning a new quote.
     func resyncToMail() {
         do {
@@ -191,45 +188,87 @@ final class AppModel: ObservableObject {
 
     // MARK: - Signature helpers
 
-    func copyCurrentSignature() {
+    /// Copies one profile's signature to the clipboard, rotating first if no
+    /// quote has been selected yet.
+    func copySignature(profileID: UUID) {
         do {
-            if let current = try signatureService.current(configuration: configuration) {
-                clipboard.copy(current.text)
-                statusMessage = nil
+            let batch: GeneratedSignatureBatch
+            if let current = try signatureService.current() {
+                batch = current
             } else {
-                let generated = try rotationService.rotate(configuration: configuration)
-                currentQuote = generated.quote
-                clipboard.copy(generated.text)
+                batch = try rotationService.rotate(configuration: configuration)
+                currentQuote = batch.quote
                 markSynced()
                 reloadFromDisk()
+            }
+            if let signature = batch.signatures.first(where: { $0.profileID == profileID }) {
+                clipboard.copy(signature.text)
+                statusMessage = nil
             }
         } catch {
             // Even if the Mail sync is blocked, still put a signature on the clipboard.
             if (error as? ApplicationError) == .mailNotRunning,
-               let generated = try? signatureService.generate(configuration: configuration) {
-                clipboard.copy(generated.text)
+               let batch = try? signatureService.generate(),
+               let signature = batch.signatures.first(where: { $0.profileID == profileID }) {
+                clipboard.copy(signature.text)
             }
             handleSyncFailure(error)
         }
     }
 
-    // MARK: - Identity
+    // MARK: - Profiles
 
-    func saveIdentity(_ newIdentity: Identity) {
+    func saveProfile(_ profile: SignatureProfile) {
+        var updated = profiles
+        if let index = updated.firstIndex(where: { $0.id == profile.id }) {
+            updated[index] = profile
+        } else {
+            updated.append(profile)
+        }
+        persistProfiles(updated, syncAfter: profile.isEnabled && profile.isConfigured)
+    }
+
+    func deleteProfile(id: UUID) {
+        persistProfiles(profiles.filter { $0.id != id }, syncAfter: false)
+    }
+
+    private func persistProfiles(_ updated: [SignatureProfile], syncAfter: Bool) {
         do {
-            try identityRepository.save(newIdentity)
-            identity = newIdentity
+            try profileRepository.saveAll(updated)
+            profiles = updated
             statusMessage = nil
-            guard newIdentity.isConfigured else { return }
+            guard syncAfter, !activeProfiles.isEmpty else { return }
             if currentQuote != nil {
                 resyncToMail()
             } else {
-                // First-run flow: identity was the missing piece, so kick off
-                // the initial rotation instead of waiting for the next tick.
+                // First-run flow: a usable profile was the missing piece, so
+                // kick off the initial rotation instead of waiting for the
+                // next tick.
                 rotateIfDue()
             }
         } catch {
-            statusMessage = "Couldn't save identity: \(error.localizedDescription)"
+            statusMessage = "Couldn't save profiles: \(error.localizedDescription)"
+        }
+    }
+
+    private func migrateLegacyIdentityIfNeeded() {
+        let defaults = UserDefaults.standard
+        let legacyIdentityRepository = FileIdentityRepository(
+            fileURL: storageDirectory.file("identity.json")
+        )
+        do {
+            try ProfileMigration.migrateIfNeeded(
+                profileRepository: profileRepository,
+                legacyIdentityRepository: legacyIdentityRepository,
+                legacySignatureName: defaults.string(forKey: DefaultsKey.signatureName) ?? "Dynamic Quote",
+                legacyTemplate: SignatureTemplate(
+                    includeIdentity: true,
+                    includeContactDetails: defaults.bool(forKey: DefaultsKey.includeContactDetails),
+                    includeQuote: defaults.bool(forKey: DefaultsKey.includeQuote)
+                )
+            )
+        } catch {
+            statusMessage = "Couldn't migrate identity to profiles: \(error.localizedDescription)"
         }
     }
 
@@ -305,7 +344,7 @@ final class AppModel: ObservableObject {
 
     private func reloadFromDisk() {
         quotes = (try? library.allQuotes()) ?? []
-        identity = (try? identityRepository.load()) ?? Identity()
+        profiles = (try? profileRepository.loadAll()) ?? []
 
         if let state = try? stateRepository.load() {
             lastSyncDate = state.lastRotated

@@ -1,8 +1,9 @@
 import Foundation
 import DynamicSignatureDomain
 
-/// Orchestrates a rotation: generate a signature, push it into Mail, then
-/// persist rotation state and quote usage statistics.
+/// Orchestrates a rotation: generate signatures for every active profile,
+/// push them into Mail, then persist rotation state and quote usage
+/// statistics.
 @MainActor
 public final class RotationService {
 
@@ -33,16 +34,17 @@ public final class RotationService {
         )
     }
 
-    /// Rotates to a new quote and syncs Mail. Throws without touching state
-    /// if generation or the Mail update fails, so a failed sync is retried
-    /// rather than silently skipped.
+    /// Rotates to a new quote and syncs every active profile's signature to
+    /// Mail. Throws without touching state if generation or any Mail update
+    /// fails, so a failed sync is retried rather than silently skipped
+    /// (re-applying an already-updated signature is harmless).
     @discardableResult
-    public func rotate(configuration: RotationConfiguration, now: Date = .now) throws -> GeneratedSignature {
-        let generated = try signatureService.generate(configuration: configuration)
-        try mailUpdater.apply(content: generated.text, toSignatureNamed: configuration.signatureName)
+    public func rotate(configuration: RotationConfiguration, now: Date = .now) throws -> GeneratedSignatureBatch {
+        let batch = try signatureService.generate()
+        try apply(batch)
 
         var state = try stateRepository.load()
-        if let quote = generated.quote {
+        if let quote = batch.quote {
             state.record(quoteID: quote.id, at: now, keepingRecent: configuration.recentQuoteLimit)
 
             var quotes = try quoteRepository.loadAll()
@@ -57,16 +59,22 @@ public final class RotationService {
         }
         try stateRepository.save(state)
 
-        return generated
+        return batch
     }
 
-    /// Re-syncs the current signature to Mail without picking a new quote
-    /// (used after identity or template edits).
+    /// Re-syncs the current signatures to Mail without picking a new quote
+    /// (used after profile or template edits).
     public func resync(configuration: RotationConfiguration) throws {
-        guard let current = try signatureService.current(configuration: configuration) else {
+        guard let current = try signatureService.current() else {
             try rotate(configuration: configuration)
             return
         }
-        try mailUpdater.apply(content: current.text, toSignatureNamed: configuration.signatureName)
+        try apply(current)
+    }
+
+    private func apply(_ batch: GeneratedSignatureBatch) throws {
+        for signature in batch.signatures {
+            try mailUpdater.apply(content: signature.text, toSignatureNamed: signature.signatureName)
+        }
     }
 }

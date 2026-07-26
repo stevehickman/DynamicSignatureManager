@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.0 — 2026-07-26
+
+Multiple signature profiles, one per mail account.
+
+### Added
+- Signature profiles: each profile bundles an identity (name, title,
+  contact details), its own Mail signature name, and per-profile template
+  toggles (quote / contact details). Rotation updates every enabled
+  profile's signature in one pass; all profiles share the same quote at any
+  given time. Assign each profile's signature to the matching account in
+  Mail → Settings → Signatures.
+- Profiles settings tab with a list + editor (add, remove, enable/disable),
+  including a guard against two profiles claiming the same Mail signature
+  name.
+- Per-profile "Copy Signature" menu when more than one profile is active.
+- Automatic migration: existing `identity.json` plus the old signature-name
+  and template preferences become a "Default" profile in `profiles.json` on
+  first launch.
+
+### Changed
+- Signature name and template toggles moved from Rotation settings into
+  each profile.
+- `SignatureService`/`RotationService` now operate on profile batches;
+  `ApplicationError.identityNotConfigured` replaced by
+  `.noProfilesConfigured`.
+
 ## 1.0.0 — 2026-07-24
 
 First working release. Rebuilt the initial scaffold into a functioning app.

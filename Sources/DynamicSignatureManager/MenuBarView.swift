@@ -21,9 +21,7 @@ struct MenuBarView: View {
                 model.rotateNow()
             }
 
-            Button("Copy Signature") {
-                model.copyCurrentSignature()
-            }
+            copySignatureSection
 
             Divider()
 
@@ -46,6 +44,28 @@ struct MenuBarView: View {
         .buttonStyle(.plain)
         .padding(12)
         .frame(width: 280)
+    }
+
+    @ViewBuilder
+    private var copySignatureSection: some View {
+        let profiles = model.activeProfiles
+        if profiles.count <= 1 {
+            Button("Copy Signature") {
+                if let profile = profiles.first {
+                    model.copySignature(profileID: profile.id)
+                }
+            }
+            .disabled(profiles.isEmpty)
+        } else {
+            Menu("Copy Signature") {
+                ForEach(profiles) { profile in
+                    Button(profile.displayLabel) {
+                        model.copySignature(profileID: profile.id)
+                    }
+                }
+            }
+            .menuStyle(.borderlessButton)
+        }
     }
 
     @ViewBuilder

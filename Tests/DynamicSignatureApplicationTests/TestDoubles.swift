@@ -13,6 +13,17 @@ final class InMemoryQuoteRepository: QuoteRepository {
     func saveAll(_ quotes: [Quote]) throws { self.quotes = quotes }
 }
 
+final class InMemoryProfileRepository: ProfileRepository {
+    var profiles: [SignatureProfile]
+
+    init(profiles: [SignatureProfile] = []) {
+        self.profiles = profiles
+    }
+
+    func loadAll() throws -> [SignatureProfile] { profiles }
+    func saveAll(_ profiles: [SignatureProfile]) throws { self.profiles = profiles }
+}
+
 final class InMemoryIdentityRepository: IdentityRepository {
     var identity: Identity?
 
