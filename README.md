@@ -64,6 +64,31 @@ That's it. The app rotates the quote on your chosen interval whenever it's
 running; enable **Launch at login** in Settings → General to make that
 permanent.
 
+## iPhone & iPad app
+
+`Apps/iOS/DynamicSignatureMobile.xcodeproj` contains a universal
+iPhone/iPad companion app built on the same Domain, Application, and
+Infrastructure targets. It manages the quote library and profiles, rotates
+the quote on your chosen interval (caught up whenever the app is opened —
+iOS allows no background scheduling), and shows each profile's rendered
+signature with a **Copy Signature** button.
+
+iOS has no scripting interface into Mail, so the app can't update the Mail
+signature automatically the way the Mac app does: paste the copied
+signature into **Settings → Mail → Signature** whenever you want a fresh
+quote on the device. Data is stored per-device; use the Quotes tab's
+Export/Import to move the library between devices.
+
+Open the project in Xcode 16+ and run the `DynamicSignatureMobile` scheme,
+or build from the command line:
+
+```bash
+xcodebuild -project Apps/iOS/DynamicSignatureMobile.xcodeproj -scheme DynamicSignatureMobile -destination 'generic/platform=iOS Simulator' build
+```
+
+(Running on a physical device requires selecting your development team in
+Xcode's Signing & Capabilities tab.)
+
 ## Quote library format
 
 Import accepts either the app's own export format or a minimal JSON array:
@@ -92,6 +117,10 @@ One Swift package, layered by target:
 | `DynamicSignatureInfrastructure` | JSON file persistence, storage directory, seed quotes |
 | `DynamicSignatureMail` | AppleScript bridge to Apple Mail, clipboard |
 | `DynamicSignatureManager` | SwiftUI menu bar app |
+
+The iPhone/iPad app (`Apps/iOS/`) is a separate Xcode target that links the
+Domain, Application, and Infrastructure products; it replaces the Mail
+layer with clipboard-based copy/paste (see ADR 0004).
 
 Design decisions are recorded in `Documentation/ADR/`.
 
