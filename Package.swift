@@ -5,7 +5,8 @@ import PackageDescription
 let package = Package(
     name: "DynamicSignatureManager",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
+        .iOS(.v17)
     ],
     products: [
         .executable(name: "DynamicSignatureManager", targets: ["DynamicSignatureManager"]),

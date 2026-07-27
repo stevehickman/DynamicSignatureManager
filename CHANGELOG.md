@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.3.0 — 2026-07-27
+
+Companion iPhone and iPad app.
+
+### Added
+- iOS app (`Apps/iOS/DynamicSignatureMobile.xcodeproj`): a universal
+  iPhone/iPad SwiftUI app built on the same Domain, Application, and
+  Infrastructure targets. It manages the quote library and profiles,
+  rotates quotes on the configured schedule (caught up when the app comes
+  to the foreground — iOS allows no background scheduling), and renders
+  each profile's signature with a Copy button for pasting into
+  Settings → Mail → Signature. iOS has no scripting bridge into Mail, so
+  automatic signature sync remains macOS-only.
+- Quote library import/export on iOS via the Files document pickers.
+
+### Changed
+- The package now declares an iOS 17 platform alongside macOS 14 so the
+  shared targets build for both platforms. Mac-only code
+  (`DynamicSignatureMail`, the menu bar app) is untouched and not linked
+  into the iOS app.
+
 ## 1.2.0 — 2026-07-26
 
 Seasonal quote selection via tags.
